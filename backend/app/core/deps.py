@@ -1,6 +1,3 @@
-
-"""FastAPI dependencies — DB sessions, auth, RBAC, CSRF."""
-
 from typing import Annotated, Callable
 
 from fastapi import Depends, HTTPException, Request, status
@@ -15,35 +12,47 @@ from app.core.config import settings
 from app.core.security import decode_access_token, verify_csrf
 
 
-# ── Database ──
+# ----------------------------------------
+# Database configuration
+# ----------------------------------------
 
 database_url = settings.DATABASE_URL
 
-# Convert PostgreSQL URLs to the asyncpg driver format.
+# Convert standard PostgreSQL URLs to the asyncpg driver.
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace(
-        "postgresql://", "postgresql+asyncpg://", 1
+        "postgresql://",
+        "postgresql+asyncpg://",
+        1,
     )
 
-# Remove connection parameters unsupported by asyncpg.
-if database_url.startswith("postgresql+asyncpg://"):
-    url = make_url(database_url)
-    query = dict(url.query)
-    query.pop("sslmode", None)
-    query.pop("channel_binding", None)
-    database_url = url.set(query=query)
+# Parse the URL once. Use URL properties for all subsequent checks.
+parsed_url = make_url(database_url)
 
-# Configure the asynchronous database engine.
+is_sqlite = parsed_url.get_backend_name() == "sqlite"
+is_async_postgres = parsed_url.drivername == "postgresql+asyncpg"
+
+# asyncpg does not accept Neon's sslmode and channel_binding
+# parameters as connection keyword arguments.
+if is_async_postgres:
+    query_params = dict(parsed_url.query)
+    query_params.pop("sslmode", None)
+    query_params.pop("channel_binding", None)
+
+    parsed_url = parsed_url.set(query=query_params)
+
+# Configure the appropriate connection arguments.
+if is_sqlite:
+    connect_args = {"check_same_thread": False}
+elif is_async_postgres:
+    connect_args = {"ssl": "require"}
+else:
+    connect_args = {}
+
 engine = create_async_engine(
-    database_url,
+    parsed_url,
     echo=(settings.APP_ENV == "dev"),
-    connect_args=(
-        {"check_same_thread": False}
-        if "sqlite" in database_url
-        else {"ssl": "require"}
-        if database_url.startswith("postgresql+asyncpg://")
-        else {}
-    ),
+    connect_args=connect_args,
 )
 
 async_session_factory = async_sessionmaker(
@@ -52,7 +61,11 @@ async_session_factory = async_sessionmaker(
 )
 
 
-async def get_db() -> AsyncSession:
+# ----------------------------------------
+# Database dependency
+# ----------------------------------------
+
+async def get_db():
     async with async_session_factory() as session:
         yield session
 
@@ -60,14 +73,11 @@ async def get_db() -> AsyncSession:
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-# ── Current user ──
+# ----------------------------------------
+# Authentication dependency
+# ----------------------------------------
 
-async def get_current_user(request: Request) -> dict:
-    """Extract and validate the user from the access cookie.
-
-    In a full implementation this re-reads the user's role and active flag
-    from the database on every request. For the prototype, we decode the JWT.
-    """
+async def get_current_user(request: Request):
     token = request.cookies.get("access")
 
     if not token:
@@ -76,9 +86,9 @@ async def get_current_user(request: Request) -> dict:
             detail="Not authenticated",
         )
 
-    try:
-        payload = decode_access_token(token)
-    except Exception:
+    payload = decode_access_token(token)
+
+    if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -94,13 +104,13 @@ async def get_current_user(request: Request) -> dict:
 CurrentUser = Annotated[dict, Depends(get_current_user)]
 
 
-# ── Role checking ──
+# ----------------------------------------
+# Role authorization
+# ----------------------------------------
 
-def require_role(*allowed_roles: str) -> Callable:
-    """Return a dependency that 403s if the user's role is not in the list."""
-
-    async def _check(user: CurrentUser) -> dict:
-        if user["role"] not in allowed_roles:
+def require_role(*allowed_roles: str):
+    async def _check(user: CurrentUser):
+        if user.get("role") not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",
@@ -110,19 +120,25 @@ def require_role(*allowed_roles: str) -> Callable:
     return Depends(_check)
 
 
-# ── CSRF check ──
+# ----------------------------------------
+# CSRF protection
+# ----------------------------------------
 
-async def csrf_check(request: Request) -> None:
-    """Validate double-submit CSRF token on state-changing requests."""
-
-    if request.method in ("GET", "HEAD", "OPTIONS"):
+async def csrf_check(request: Request):
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
         return
 
-    cookie_val = request.cookies.get("csrf", "")
-    header_val = request.headers.get("X-CSRF-Token", "")
+    csrf_cookie = request.cookies.get("csrf")
+    csrf_header = request.headers.get("X-CSRF-Token")
 
-    if not cookie_val or not verify_csrf(cookie_val, header_val):
+    if not csrf_cookie or not csrf_header:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="CSRF validation failed",
+            detail="CSRF token missing",
+        )
+
+    if not verify_csrf(csrf_cookie, csrf_header):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid CSRF token",
         )
