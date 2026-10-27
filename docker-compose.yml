@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  # ── Backend API ──
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pramaan-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./pramaan.db
+      - APP_ENV=demo
+    volumes:
+      - ./backend:/app
+      - uploads:/app/uploads
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # ── Frontend (dev) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pramaan-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── Authority Mock Service ──
+  authority:
+    build:
+      context: ./authority_mock
+      dockerfile: Dockerfile
+    container_name: pramaan-authority
+    ports:
+      - "8100:8100"
+    environment:
+      - SIM_TOKEN=sim-token-change-me
+    restart: unless-stopped
+
+volumes:
+  uploads:

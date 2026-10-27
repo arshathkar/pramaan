@@ -1,0 +1,33 @@
+# Pramaan — Risk Weight Configuration
+# Version: 1.0.0
+
+version: "1.0.0"
+
+# Weights for composite risk score calculation (must sum to 1.0)
+weights:
+  doc_authenticity: 0.30
+  compliance_gap: 0.25
+  cross_verification: 0.20
+  historical_track: 0.15
+  anomaly_detection: 0.10
+
+# Severity point values
+severity_points:
+  CRITICAL: 25
+  HIGH: 15
+  MEDIUM: 8
+  LOW: 3
+
+# Risk level thresholds (score → level)
+thresholds:
+  LOW: [0, 25]
+  MEDIUM: [26, 50]
+  HIGH: [51, 75]
+  CRITICAL: [76, 100]
+
+# Historical multipliers
+history:
+  prior_deficiency_unresolved: 1.5
+  prior_deficiency_resolved: 0.8
+  first_time_applicant: 1.0
+  repeat_offender: 2.0

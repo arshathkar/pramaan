@@ -1,0 +1,57 @@
+# Environment variables and secrets
+
+.env
+.env.*
+!.env.example
+
+# Dependencies
+
+node_modules/
+venv/
+.venv/
+**pycache**/
+
+# Build outputs
+
+dist/
+build/
+.next/
+out/
+
+# Python generated files
+
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Logs and temporary files
+
+*.log
+tmp/
+temp/
+
+# IDE and operating system files
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Coverage reports
+
+coverage/
+htmlcov/
+
+# Local databases and application data
+
+*.sqlite
+*.sqlite3
+*.db
+
+# Certificates and private keys
+
+*.pem
+*.key
+*.p12
+*.pfx

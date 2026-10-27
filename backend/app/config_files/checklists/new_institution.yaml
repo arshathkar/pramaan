@@ -1,0 +1,66 @@
+# Pramaan — Checklists for NEW_INSTITUTION category
+# Version: 1.0.0
+
+version: "1.0.0"
+category: NEW_INSTITUTION
+label: "New Institution Application Checklist"
+
+documents:
+  - id: trust_deed
+    label: "Trust/Society Registration Deed"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+    issuer_type: REGISTRAR_OF_SOCIETIES
+
+  - id: land_document
+    label: "Land Document (Sale Deed / Lease)"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+
+  - id: building_completion
+    label: "Building Completion Certificate"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+    issuer_type: MUNICIPAL_AUTHORITY
+
+  - id: fire_safety
+    label: "Fire Safety Certificate"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+    issuer_type: FIRE_DEPARTMENT
+    validity_check: true
+
+  - id: affiliation_letter
+    label: "University Affiliation Letter"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+    cross_verify: true
+
+  - id: noc_state
+    label: "NOC from State Government"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+
+  - id: faculty_list
+    label: "Faculty List with Qualifications"
+    required: true
+    accepted_types: [PDF, XLSX]
+    max_size_mb: 10
+
+  - id: financial_statement
+    label: "Audited Financial Statements (2 years)"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 15
+
+  - id: fee_receipt
+    label: "AICTE Processing Fee Receipt"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 5

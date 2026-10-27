@@ -1,0 +1,52 @@
+# Pramaan — Checklists for EXTENSION_OF_APPROVAL category
+# Version: 1.0.0
+
+version: "1.0.0"
+category: EXTENSION_OF_APPROVAL
+label: "Extension of Approval (EoA) Checklist"
+
+documents:
+  - id: eoa_application_form
+    label: "EoA Application Form"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 10
+
+  - id: previous_eoa
+    label: "Previous Year EOA Letter"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 10
+    cross_verify: true
+
+  - id: affiliation_letter
+    label: "Current Affiliation Letter"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 10
+    cross_verify: true
+
+  - id: faculty_list
+    label: "Updated Faculty List"
+    required: true
+    accepted_types: [PDF, XLSX]
+    max_size_mb: 10
+
+  - id: fee_receipt
+    label: "AICTE Fee Receipt"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 5
+
+  - id: fire_safety
+    label: "Valid Fire Safety Certificate"
+    required: true
+    accepted_types: [PDF]
+    max_size_mb: 10
+    validity_check: true
+
+  - id: deficiency_compliance
+    label: "Deficiency Compliance Report (if applicable)"
+    required: false
+    accepted_types: [PDF]
+    max_size_mb: 15

@@ -1,0 +1,65 @@
+# Pramaan — Known Document Issuers and Authority Sources
+# Used for cross-verification mock data
+
+version: "1.0.0"
+
+issuers:
+  - id: AICTE_PORTAL
+    name: "AICTE Approval Portal"
+    type: GOVERNMENT
+    verification_method: API
+    fields_available:
+      - institution_name
+      - institution_code
+      - eoa_letter_no
+      - approved_programmes
+      - approved_intake
+
+  - id: REGISTRAR_OF_SOCIETIES
+    name: "Registrar of Societies / Charities Commissioner"
+    type: GOVERNMENT
+    verification_method: API
+    fields_available:
+      - trust_name
+      - registration_no
+      - registration_date
+
+  - id: MUNICIPAL_AUTHORITY
+    name: "Municipal Corporation / Local Authority"
+    type: GOVERNMENT
+    verification_method: MANUAL
+    fields_available:
+      - building_no
+      - completion_date
+      - occupancy_type
+
+  - id: FIRE_DEPARTMENT
+    name: "State Fire & Emergency Services"
+    type: GOVERNMENT
+    verification_method: API
+    fields_available:
+      - certificate_no
+      - valid_from
+      - valid_to
+      - building_address
+
+  - id: UNIVERSITY
+    name: "Affiliating University"
+    type: ACADEMIC
+    verification_method: API
+    fields_available:
+      - affiliation_no
+      - institution_name
+      - programmes_affiliated
+      - valid_from
+      - valid_to
+
+  - id: MCA_REGISTRY
+    name: "Ministry of Corporate Affairs (Company Registry)"
+    type: GOVERNMENT
+    verification_method: API
+    fields_available:
+      - company_name
+      - cin
+      - registration_date
+      - status

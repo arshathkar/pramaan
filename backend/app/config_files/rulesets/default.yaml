@@ -1,0 +1,109 @@
+# Pramaan — Validation Rulesets
+# Version: 1.0.0
+
+version: "1.0.0"
+
+rules:
+  # ── Document Authenticity Rules ──
+
+  - id: R-AUTH-001
+    kind: DOC_AUTHENTICITY
+    title: "Image layer anomaly detection"
+    description: "Check for signs of potential modification in document image layers"
+    detector: D2
+    severity_default: HIGH
+    threshold: 0.60
+    active: true
+
+  - id: R-AUTH-002
+    kind: DOC_AUTHENTICITY
+    title: "Metadata date consistency"
+    description: "Compare document creation/modification dates with claimed issue date"
+    detector: D2
+    severity_default: MEDIUM
+    active: true
+
+  - id: R-AUTH-003
+    kind: DOC_AUTHENTICITY
+    title: "Document anomaly score threshold"
+    description: "Flag documents with anomaly score above threshold"
+    detector: D2
+    severity_default: CRITICAL
+    threshold: 0.80
+    active: true
+
+  # ── Compliance Rules ──
+
+  - id: R-COMP-001
+    kind: COMPLIANCE_GAP
+    title: "Document completeness check"
+    description: "Verify all required documents per category checklist are uploaded"
+    detector: D3
+    severity_default: HIGH
+    active: true
+
+  - id: R-COMP-002
+    kind: COMPLIANCE_GAP
+    title: "Faculty-to-student ratio check"
+    description: "Verify ratio meets AICTE norms (1:20 UG, 1:15 PG)"
+    detector: D3
+    severity_default: MEDIUM
+    norms:
+      ug_ratio: 20
+      pg_ratio: 15
+    active: true
+
+  - id: R-COMP-003
+    kind: COMPLIANCE_GAP
+    title: "PhD faculty percentage"
+    description: "At least 10% UG / 50% PG faculty should hold PhD"
+    detector: D3
+    severity_default: LOW
+    norms:
+      ug_phd_pct: 10
+      pg_phd_pct: 50
+    active: true
+
+  - id: R-COMP-004
+    kind: COMPLIANCE_GAP
+    title: "Fee payment status check"
+    description: "Verify AICTE processing fee has been paid"
+    detector: D3
+    severity_default: HIGH
+    active: true
+
+  - id: R-COMP-005
+    kind: COMPLIANCE_GAP
+    title: "Intake numbers consistency"
+    description: "Compare declared intake with AICTE-approved intake"
+    detector: D3
+    severity_default: LOW
+    active: true
+
+  # ── Cross-Verification Rules ──
+
+  - id: R-XVER-001
+    kind: CROSS_VERIFY_MISMATCH
+    title: "Institution name consistency"
+    description: "Verify institution name matches across all documents and authority records"
+    detector: D6
+    severity_default: HIGH
+    active: true
+
+  - id: R-XVER-002
+    kind: CROSS_VERIFY_MISMATCH
+    title: "EOA letter number verification"
+    description: "Cross-verify EOA letter number with AICTE records"
+    detector: D6
+    severity_default: MEDIUM
+    active: true
+
+  # ── Missing Document Rules ──
+
+  - id: R-DOC-001
+    kind: MISSING_DOCUMENT
+    title: "Required document missing"
+    description: "A required document per the category checklist is not uploaded"
+    detector: D3
+    severity_default: MEDIUM
+    active: true
