@@ -1,29 +1,39 @@
+
 """FastAPI dependencies — DB sessions, auth, RBAC, CSRF."""
 
 from typing import Annotated, Callable
 
 from fastapi import Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.engine import make_url
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+)
 
 from app.core.config import settings
 from app.core.security import decode_access_token, verify_csrf
 
-# ── Database ──
 
+# ── Database ──
 
 database_url = settings.DATABASE_URL
 
-# Convert PostgreSQL URLs to the asyncpg driver format
+# Convert PostgreSQL URLs to the asyncpg driver format.
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace(
         "postgresql://", "postgresql+asyncpg://", 1
     )
 
-# asyncpg uses "ssl", not "sslmode"
-if "sslmode=" in database_url:
-    database_url = database_url.replace("sslmode=require", "")
-    database_url = database_url.replace("sslmode=verify-full", "")
+# Remove connection parameters unsupported by asyncpg.
+if database_url.startswith("postgresql+asyncpg://"):
+    url = make_url(database_url)
+    query = dict(url.query)
+    query.pop("sslmode", None)
+    query.pop("channel_binding", None)
+    database_url = url.set(query=query)
 
+# Configure the asynchronous database engine.
 engine = create_async_engine(
     database_url,
     echo=(settings.APP_ENV == "dev"),
@@ -31,14 +41,18 @@ engine = create_async_engine(
         {"check_same_thread": False}
         if "sqlite" in database_url
         else {"ssl": "require"}
+        if database_url.startswith("postgresql+asyncpg://")
+        else {}
     ),
 )
 
+async_session_factory = async_sessionmaker(
+    engine,
+    expire_on_commit=False,
+)
 
-async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-
-async def get_db() -> AsyncSession:  # type: ignore[misc]
+async def get_db() -> AsyncSession:
     async with async_session_factory() as session:
         yield session
 
@@ -55,13 +69,20 @@ async def get_current_user(request: Request) -> dict:
     from the database on every request. For the prototype, we decode the JWT.
     """
     token = request.cookies.get("access")
+
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
 
     try:
         payload = decode_access_token(token)
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
     return {
         "id": payload["sub"],
@@ -80,7 +101,10 @@ def require_role(*allowed_roles: str) -> Callable:
 
     async def _check(user: CurrentUser) -> dict:
         if user["role"] not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
         return user
 
     return Depends(_check)
@@ -90,9 +114,15 @@ def require_role(*allowed_roles: str) -> Callable:
 
 async def csrf_check(request: Request) -> None:
     """Validate double-submit CSRF token on state-changing requests."""
+
     if request.method in ("GET", "HEAD", "OPTIONS"):
         return
+
     cookie_val = request.cookies.get("csrf", "")
     header_val = request.headers.get("X-CSRF-Token", "")
+
     if not cookie_val or not verify_csrf(cookie_val, header_val):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF validation failed")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF validation failed",
+        )
