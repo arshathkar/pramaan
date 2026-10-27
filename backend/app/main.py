@@ -60,15 +60,16 @@ async def security_headers(request: Request, call_next):
 
 # ── CORS (dev only — prod uses same-origin via proxy) ──
 
-if settings.APP_ENV == "dev":
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://pramaan-liart.vercel.app",
+        "http://localhost:5173",  # Local development
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Global exception handler ──
 
