@@ -10,11 +10,30 @@ from app.core.security import decode_access_token, verify_csrf
 
 # ── Database ──
 
+
+database_url = settings.DATABASE_URL
+
+# Convert PostgreSQL URLs to the asyncpg driver format
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace(
+        "postgresql://", "postgresql+asyncpg://", 1
+    )
+
+# asyncpg uses "ssl", not "sslmode"
+if "sslmode=" in database_url:
+    database_url = database_url.replace("sslmode=require", "")
+    database_url = database_url.replace("sslmode=verify-full", "")
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    database_url,
     echo=(settings.APP_ENV == "dev"),
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
+    connect_args=(
+        {"check_same_thread": False}
+        if "sqlite" in database_url
+        else {"ssl": "require"}
+    ),
 )
+
 
 async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
